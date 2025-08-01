@@ -2,6 +2,8 @@ import { HttpClient } from './http';
 import { AccountsResource } from './resources/accounts';
 import { TransactionsResource } from './resources/transactions';
 import { StreamsResource } from './resources/streams';
+import { ConditionBuilder } from './builders/condition';
+import { ProductBuilder } from './builders/product';
 
 export interface ClientOptions {
   /** The API environment to use. Defaults to 'production'. */
@@ -40,6 +42,40 @@ export class QuicksilverClient {
   }
 
   /**
+   * Creates a new Condition builder.
+   * This is the entry point for creating all conditional logic.
+   * @example
+   * client.condition()
+   *   .when(Event.ApiCallSuccess)
+   *   .then(Action.pay(100));
+   */
+  condition(): ConditionBuilder {
+    return new ConditionBuilder();
+  }
+
+  /**
+   * Creates a new Product builder.
+   * This is the entry point for defining programmable products and services.
+   * @example
+   * client.product('translation-service')
+   *   .charge(0.01, 'per_word')
+   *   .guarantee({ quality: 0.98 });
+   */
+  product(id: string): ProductBuilder {
+    return new ProductBuilder(id);
+  }
+
+  /**
+   * A fluent query builder for finding transactions.
+   * (Illustrative - matches the vision doc)
+   */
+  async findTransactions(query: (t: TransactionQuery) => TransactionQuery) {
+    // In a real implementation, this would build and send a query
+    console.log('Querying transactions with:', query);
+    return [];
+  }
+
+  /**
    * Get the current API key (masked for security)
    */
   getApiKey(): string {
@@ -69,4 +105,11 @@ export class QuicksilverClient {
   async health(): Promise<{ status: string; version: string; uptime: number }> {
     return this.httpClient.get<{ status: string; version: string; uptime: number }>('/health');
   }
+}
+
+// Dummy interface for the query builder example
+interface TransactionQuery {
+  where(predicate: (t: any) => boolean): this;
+  orderBy(field: string, direction: 'asc' | 'desc'): this;
+  limit(count: number): this;
 } 

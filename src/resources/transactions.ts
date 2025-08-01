@@ -1,12 +1,13 @@
 import { HttpClient } from '../http';
 import type { 
-  Transaction, 
+  Transaction as TransactionData, 
   CreateTransactionPayload, 
   StreamingTransaction, 
   CreateStreamingTransactionPayload,
   PaginationParams, 
   PaginatedResponse 
 } from '../types';
+import { Transaction } from '../models/transaction';
 
 export class TransactionsResource {
   constructor(private httpClient: HttpClient) {}
@@ -16,7 +17,8 @@ export class TransactionsResource {
    * @param payload - The details of the transaction.
    */
   async create(payload: CreateTransactionPayload): Promise<Transaction> {
-    return this.httpClient.post<Transaction>('/transactions', payload);
+    const transactionData = await this.httpClient.post<TransactionData>('/transactions', payload);
+    return new Transaction(transactionData, this.httpClient);
   }
 
   /**
@@ -24,7 +26,8 @@ export class TransactionsResource {
    * @param id - The ID of the transaction.
    */
   async retrieve(id: string): Promise<Transaction> {
-    return this.httpClient.get<Transaction>(`/transactions/${id}`);
+    const transactionData = await this.httpClient.get<TransactionData>(`/transactions/${id}`);
+    return new Transaction(transactionData, this.httpClient);
   }
 
   /**
@@ -64,7 +67,11 @@ export class TransactionsResource {
     const queryString = queryParams.toString();
     const url = queryString ? `/transactions?${queryString}` : '/transactions';
     
-    return this.httpClient.get<PaginatedResponse<Transaction>>(url);
+    const response = await this.httpClient.get<PaginatedResponse<TransactionData>>(url);
+    return {
+      ...response,
+      data: response.data.map(transactionData => new Transaction(transactionData, this.httpClient))
+    };
   }
 
   /**
@@ -73,7 +80,8 @@ export class TransactionsResource {
    * @param payload - The updated transaction details.
    */
   async update(id: string, payload: Partial<CreateTransactionPayload>): Promise<Transaction> {
-    return this.httpClient.put<Transaction>(`/transactions/${id}`, payload);
+    const transactionData = await this.httpClient.put<TransactionData>(`/transactions/${id}`, payload);
+    return new Transaction(transactionData, this.httpClient);
   }
 
   /**
@@ -107,7 +115,11 @@ export class TransactionsResource {
       ? `/transactions/${parentId}/children?${queryString}` 
       : `/transactions/${parentId}/children`;
     
-    return this.httpClient.get<PaginatedResponse<Transaction>>(url);
+    const response = await this.httpClient.get<PaginatedResponse<TransactionData>>(url);
+    return {
+      ...response,
+      data: response.data.map(transactionData => new Transaction(transactionData, this.httpClient))
+    };
   }
 
   /**
@@ -153,6 +165,10 @@ export class TransactionsResource {
       ? `/accounts/${accountId}/transactions?${queryString}` 
       : `/accounts/${accountId}/transactions`;
     
-    return this.httpClient.get<PaginatedResponse<Transaction>>(url);
+    const response = await this.httpClient.get<PaginatedResponse<TransactionData>>(url);
+    return {
+      ...response,
+      data: response.data.map(transactionData => new Transaction(transactionData, this.httpClient))
+    };
   }
 } 

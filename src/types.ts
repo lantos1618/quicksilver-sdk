@@ -6,6 +6,46 @@ export type TransactionState = "Draft" | "Pending" | "Executing" | "Completed" |
 export type StreamRateUnit = "PerSecond" | "PerMinute" | "PerHour" | "PerWord" | "PerToken" | { Custom: string };
 export type Currency = "USD" | "USDC" | "EUR" | { Custom: string };
 
+// --- New DSL Types ---
+
+export enum QuickSilverEvent {
+  MilestoneApproved = 'milestone_approved',
+  TimeElapsed = 'time_elapsed',
+  ApiCallSuccess = 'api_call_success',
+  ApiCallFailure = 'api_call_failure',
+  PaymentReceived = 'payment_received',
+  StreamStarted = 'stream_started',
+  StreamStopped = 'stream_stopped',
+  Custom = 'custom'
+}
+
+export interface Action {
+  type: string;
+  toJSON(): object;
+}
+
+export interface Condition {
+  trigger: QuickSilverEvent | ((ctx: any) => boolean);
+  predicate?: (ctx: any) => boolean;
+  actions: Action[];
+}
+
+export interface ProductDefinition {
+  id: string;
+  pricing: {
+    model: 'per_unit' | 'streaming';
+    rate: number;
+    unit: string;
+    currency: Currency;
+  };
+  guarantees: Record<string, any>;
+  workflow: Array<{
+    name: string;
+    delegateTo: string;
+    charge: number;
+  }>;
+}
+
 // --- Main Data Models ---
 
 export interface Account {
@@ -35,7 +75,7 @@ export interface Transaction {
   parent_id?: string | null;
   children: string[];
   state: TransactionState;
-  conditions?: any | null; // Placeholder for the future conditional logic schema
+  conditions?: Condition[] | null; // Now properly typed
   meta: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -75,8 +115,7 @@ export interface CreateTransactionPayload {
   to?: string;
   parent_id?: string;
   meta?: Record<string, any>;
-  // This will be added based on your roadmap
-  // conditions?: ConditionsPayload;
+  conditions?: Condition[]; // Now properly typed
 }
 
 export interface CreateStreamingTransactionPayload {

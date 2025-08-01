@@ -1,317 +1,379 @@
 # Quicksilver SDK
 
-A modern, idiomatic TypeScript SDK for the Quicksilver Engine API. Built with developer experience in mind, providing strong typing, real-time capabilities, and elegant abstractions.
+> **A new primitive for programmable money** - Transform your SDK from a generic REST wrapper into a fluent Domain-Specific Language (DSL) for Agent Commerce.
 
-## Features
+## 🚀 The Vision
 
-- 🚀 **Modern TypeScript** - Full type safety with autocompletion
-- ⚡ **Real-time Streaming** - SSE-based event handling for live updates
-- 🏗️ **Resource-Oriented** - Clean, organized API surface
-- 🔄 **Automatic Reconnection** - Robust SSE connection handling
-- 🛡️ **Error Handling** - Comprehensive error types and handling
-- 📦 **Tree-shakable** - Only import what you need
+Quicksilver isn't just another payment API. It's a **new primitive for programmable money** that enables developers to build sophisticated economic interactions with elegant, type-safe code.
 
-## Installation
+### Before: Generic REST Wrapper
+```typescript
+// ❌ Ugly, untyped, error-prone
+const transactionData = await client.transactions.create({
+  amount: 5000,
+  currency: 'USD',
+  transaction_type: 'Escrow',
+  meta: {
+    conditional_logic: {
+      type: 'milestone_based',
+      release_conditions: [{ milestone: 'design', condition: 'client_approval' }]
+    }
+  }
+});
+// Now returns active Transaction model directly!
+```
+
+### After: Fluent DSL for Programmable Money
+```typescript
+// ✅ Elegant, type-safe, expressive
+const escrowTx = clientAccount.transaction({
+  amount: 5000,
+  currency: 'USD',
+  transaction_type: 'Escrow',
+  to: freelancerAccount.id,
+  conditions: client.condition()
+    .when(QuickSilverEvent.MilestoneApproved, ctx => ctx.milestone === 'design')
+    .then(Action.release(1000).to(freelancerAccount))
+    .then(Action.notify(clientAccount, 'Design milestone paid.'))
+    .otherwise(Action.hold('Awaiting approval.'))
+    .getConditions()
+});
+```
+
+## 🏗️ Architecture
+
+### Core Philosophy: From API Wrapper to Fluent DSL
+
+1. **Builder Pattern**: Complex operations use fluent, chainable builders
+2. **Active Records**: `Account` and `Transaction` objects have methods, not just data
+3. **First-Class Primitives**: `Condition` and `Product` are core concepts
+4. **Type Safety**: Invalid states are impossible, rich autocompletion
+5. **Hide Complexity**: Builders generate JSON behind the scenes
+
+### New File Structure
+
+```
+src/
+├── client.ts              # Factory for builders
+├── builders/              # Fluent builders
+│   ├── action.ts         # Action definitions
+│   ├── condition.ts      # Conditional logic
+│   └── product.ts        # Programmable products
+├── models/               # Active models
+│   ├── account.ts        # Account with methods
+│   └── transaction.ts    # Transaction with methods
+└── resources/            # Legacy REST wrapper
+    ├── accounts.ts
+    └── transactions.ts
+```
+
+## 📦 Installation
 
 ```bash
-# Using Bun (recommended)
-bun add quicksilver-sdk
-
-# Using npm
 npm install quicksilver-sdk
-
-# Using yarn
-yarn add quicksilver-sdk
+# or
+bun add quicksilver-sdk
 ```
 
-## Quick Start
+## 🎯 Quick Start
+
+### 1. Initialize the Client
 
 ```typescript
 import { QuicksilverClient } from 'quicksilver-sdk';
 
-const client = new QuicksilverClient('your-api-key-here');
+const client = new QuicksilverClient('your-api-key', { 
+  env: 'sandbox' 
+});
+```
 
-// Create accounts
-const alice = await client.accounts.create({
-  name: 'Alice (Creator)',
-  account_type: 'Human'
+### 2. Create Active Accounts
+
+```typescript
+// Create accounts (now returns active Account models directly!)
+const mainAgent = await client.accounts.create({
+  name: 'Main AI Agent',
+  account_type: 'AgentMain'
 });
 
-const bob = await client.accounts.create({
-  name: 'Bob (Subscriber)',
-  account_type: 'Human'
+// Delegate sub-agents fluently
+const researchAgent = await account.delegate({
+  name: 'Research Sub-Agent',
+  limits: { daily: 2000 }
+});
+```
+
+### 3. Define Conditional Logic
+
+```typescript
+// Elegant conditional logic - no more ugly JSON blobs
+const projectCondition = client.condition()
+  .when(QuickSilverEvent.MilestoneApproved, ctx => ctx.milestone === 'design')
+  .then(Action.release(1000).to(freelancerAccount))
+  .then(Action.notify(clientAccount, 'Design milestone paid.'))
+  
+  .when(QuickSilverEvent.MilestoneApproved, ctx => ctx.milestone === 'deploy')
+  .then(Action.release(4000).to(freelancerAccount))
+  
+  .otherwise(Action.hold('Awaiting milestone approval.'));
+```
+
+### 4. Create Programmable Products
+
+```typescript
+// Define services as programmable products
+const translationService = client.product('ai-translation-en-es')
+  .charge(0.01, 'per_word')
+  .guarantee({ accuracy: 0.98, turnaround: '5 minutes' })
+  .build();
+
+// Multi-agent workflow as a product
+const contentPipeline = client.product('blog-post-pipeline')
+  .stage('research', { delegateTo: researchAgent.id, charge: 20 })
+  .stage('writing', { delegateTo: writerAgent.id, charge: 40 })
+  .guarantee({ delivery: '24 hours' })
+  .build();
+```
+
+### 5. Execute Transactions
+
+```typescript
+// Create transactions with fluent interface
+const escrowTx = clientAccount.transaction({
+  amount: 5000,
+  currency: 'USD',
+  transaction_type: 'Escrow',
+  to: freelancerAccount.id,
+  conditions: projectCondition.getConditions()
 });
 
-// Create a streaming transaction
-const baseTx = await client.transactions.create({
-  from: bob.id,
-  to: alice.id,
+// Execute and trigger events
+await escrowTx.execute();
+await escrowTx.triggerEvent(QuickSilverEvent.MilestoneApproved, { 
+  milestone: 'design' 
+});
+```
+
+## 🎨 Examples
+
+### Conditional Escrow
+
+```typescript
+// examples/3-conditional-escrow.ts
+const projectCondition = client.condition()
+  .when(QuickSilverEvent.MilestoneApproved, ctx => ctx.milestone === 'design')
+  .then(Action.release(1000).to(freelancerAccount))
+  .then(Action.notify(clientAccount, 'Design milestone paid.'))
+
+  .when(QuickSilverEvent.MilestoneApproved, ctx => ctx.milestone === 'deploy')
+  .then(Action.release(4000).to(freelancerAccount))
+
+  .otherwise(Action.hold('Awaiting milestone approval.'));
+
+const escrowTx = clientAccount.transaction({
+  amount: 5000,
+  currency: 'USD',
+  transaction_type: 'Escrow',
+  to: freelancerAccount.id,
+  conditions: projectCondition.getConditions()
+});
+
+await escrowTx.execute();
+```
+
+### Programmable Products
+
+```typescript
+// examples/4-programmable-products.ts
+const translationService = client.product('ai-translation-en-es')
+  .charge(0.01, 'per_word')
+  .guarantee({ accuracy: 0.98, turnaround: '5 minutes' })
+  .build();
+
+const contentPipeline = client.product('blog-post-pipeline')
+  .stage('research', { delegateTo: researchAgent.id, charge: 20 })
+  .stage('writing', { delegateTo: writerAgent.id, charge: 40 })
+  .guarantee({ delivery: '24 hours' })
+  .build();
+
+// Purchase products
+const translationJob = await customer.purchase(translationService, {
+  text: "The agent economy is at an inflection point.",
+  word_count: 8
+});
+```
+
+### Streaming Payments
+
+```typescript
+// examples/5-streaming-and-events.ts
+const streamingCondition = client.condition()
+  .when(QuickSilverEvent.StreamStarted)
+  .then(Action.notify(contentCreator, 'Stream started - payments beginning'))
+  
+  .when(QuickSilverEvent.PaymentReceived)
+  .then(Action.notify(contentCreator, 'Payment received'))
+  
+  .when(QuickSilverEvent.StreamStopped)
+  .then(Action.notify(contentCreator, 'Stream ended - final payment sent'))
+  .then(Action.release(50).to(contentCreator)) // Bonus for completion
+
+  .otherwise(Action.hold('Stream in progress...'));
+
+const streamingTx = platform.transaction({
   amount: 1000,
   currency: 'USD',
-  transaction_type: 'Stream'
+  transaction_type: 'Stream',
+  to: contentCreator.id,
+  conditions: streamingCondition.getConditions(),
+  meta: { rate: 0.01, rate_unit: 'per_second' }
 });
 
-const stream = await client.transactions.createStream(baseTx.id, {
-  rate: 0.5,
-  rate_unit: 'PerSecond'
-});
-
-// Subscribe to real-time events
-const connection = client.streams.subscribe(stream.base.id);
-
-connection.on('batch_created', (data) => {
-  console.log(`Payment created: $${data.amount}`);
-});
-
-connection.on('stream_event', (data) => {
-  console.log(`Stream status: ${data.event_type}`);
-});
+await streamingTx.execute();
 ```
 
-## API Reference
+## 🔧 API Reference
 
-### Client Initialization
-
-```typescript
-import { QuicksilverClient } from 'quicksilver-sdk';
-
-const client = new QuicksilverClient(apiKey, {
-  env: 'sandbox', // or 'production'
-  baseURL: 'https://custom-api.example.com', // optional override
-  timeout: 30000 // optional timeout in ms
-});
-```
-
-### Accounts
+### Client
 
 ```typescript
-// Create an account
-const account = await client.accounts.create({
-  name: 'My Account',
-  account_type: 'Human',
-  parent_id: 'parent-account-id', // optional
-  meta: { custom: 'data' } // optional
-});
-
-// Retrieve an account
-const account = await client.accounts.retrieve('account-id');
-
-// List accounts with pagination
-const accounts = await client.accounts.list({
-  page: 1,
-  limit: 20
-});
-
-// Update an account
-const updated = await client.accounts.update('account-id', {
-  name: 'Updated Name'
-});
-
-// Delete an account
-await client.accounts.delete('account-id');
-
-// Get child accounts
-const children = await client.accounts.getChildren('parent-id');
-```
-
-### Transactions
-
-```typescript
-// Create a transaction
-const transaction = await client.transactions.create({
-  amount: 100,
-  currency: 'USD',
-  transaction_type: 'Payment',
-  from: 'sender-account-id',
-  to: 'receiver-account-id'
-});
-
-// Retrieve a transaction
-const transaction = await client.transactions.retrieve('transaction-id');
-
-// List transactions with filters
-const transactions = await client.transactions.list({
-  from: 'account-id',
-  transaction_type: 'Payment',
-  state: 'Completed',
-  page: 1,
-  limit: 20
-});
-
-// Create a streaming transaction
-const stream = await client.transactions.createStream('base-transaction-id', {
-  rate: 0.5,
-  rate_unit: 'PerSecond',
-  start_time: '2024-01-01T00:00:00Z', // optional
-  end_time: '2024-01-02T00:00:00Z' // optional
-});
-```
-
-### Streaming Transactions
-
-```typescript
-// Retrieve stream status
-const stream = await client.streams.retrieve('stream-id');
-
-// List all streams
-const streams = await client.streams.list({
-  state: 'Active',
-  page: 1,
-  limit: 20
-});
-
-// Control stream
-await client.streams.pause('stream-id');
-await client.streams.resume('stream-id');
-await client.streams.stop('stream-id');
-
-// Update stream configuration
-await client.streams.update('stream-id', {
-  rate: 1.0,
-  rate_unit: 'PerMinute'
-});
-```
-
-### Real-time Events
-
-```typescript
-// Subscribe to a specific stream
-const connection = client.streams.subscribe('stream-id');
-
-// Subscribe to all streams for an account
-const connection = client.streams.subscribeToAccount('account-id');
-
-// Subscribe to all streams globally
-const connection = client.streams.subscribeToAll();
-
-// Handle events
-connection.on('open', () => {
-  console.log('Connection established');
-});
-
-connection.on('batch_created', (data) => {
-  console.log(`Batch payment: $${data.amount} (${data.batch_transaction_id})`);
-});
-
-connection.on('stream_event', (data) => {
-  console.log(`Stream ${data.stream_id}: ${data.event_type}`);
-});
-
-connection.on('error', (error) => {
-  console.error('Connection error:', error);
-});
-
-connection.on('close', () => {
-  console.log('Connection closed');
-});
-
-// Close connection
-connection.close();
-
-// Configure reconnection
-connection.setMaxReconnectAttempts(10);
-connection.setReconnectDelay(2000);
-```
-
-### Error Handling
-
-```typescript
-import { 
-  QuicksilverError, 
-  AuthenticationError, 
-  NotFoundError,
-  ValidationError 
-} from 'quicksilver-sdk';
-
-try {
-  const account = await client.accounts.retrieve('invalid-id');
-} catch (error) {
-  if (error instanceof NotFoundError) {
-    console.log('Account not found');
-  } else if (error instanceof AuthenticationError) {
-    console.log('Invalid API key');
-  } else if (error instanceof ValidationError) {
-    console.log('Invalid request data');
-  } else if (error instanceof QuicksilverError) {
-    console.log(`API Error: ${error.message}`);
-    console.log(`Status: ${error.statusCode}`);
-  }
+class QuicksilverClient {
+  // DSL Builders
+  condition(): ConditionBuilder
+  product(id: string): ProductBuilder
+  
+  // Legacy Resources
+  accounts: AccountsResource
+  transactions: TransactionsResource
+  streams: StreamsResource
 }
 ```
 
-## TypeScript Support
-
-The SDK is built with TypeScript and provides full type safety:
+### Account Model
 
 ```typescript
-import type { 
-  Account, 
-  Transaction, 
-  StreamingTransaction,
-  CreateAccountPayload 
-} from 'quicksilver-sdk';
-
-// All types are available for your own use
-const accountData: CreateAccountPayload = {
-  name: 'My Account',
-  account_type: 'Human'
-};
+class Account {
+  // Delegation
+  delegate(options: { name: string, limits: { daily: number } }): Promise<Account>
+  
+  // Transactions
+  transaction(details: TransactionDetails): Transaction
+  purchase(product: Product, options: any): Promise<Transaction>
+  
+  // Management
+  refresh(): Promise<this>
+  getChildren(): Promise<Account[]>
+  updateLimits(limits: Limits): Promise<this>
+  getBalance(): Promise<Balance>
+}
 ```
 
-## Environment Variables
-
-For production use, store your API key securely:
-
-```bash
-# .env
-QUICKSILVER_API_KEY=your-api-key-here
-```
+### Transaction Model
 
 ```typescript
-import { QuicksilverClient } from 'quicksilver-sdk';
-
-const client = new QuicksilverClient(process.env.QUICKSILVER_API_KEY!);
+class Transaction {
+  // Execution
+  execute(): Promise<this>
+  cancel(): Promise<this>
+  triggerEvent(event: string, context: any): Promise<this>
+  
+  // Information
+  getCost(): Promise<number>
+  refresh(): Promise<this>
+  isFinal(): boolean
+  isPending(): boolean
+  
+  // Management
+  withConditions(conditionBuilder: ConditionBuilder): this
+  getMeta(): Record<string, any>
+  updateMeta(meta: Record<string, any>): Promise<this>
+}
 ```
 
-## Development
+### Condition Builder
 
-```bash
-# Install dependencies
-bun install
-
-# Build the SDK
-bun run build
-
-# Run in development mode (watch for changes)
-bun run dev
-
-# Run tests
-bun test
-
-# Type checking
-bun run typecheck
-
-# Lint code
-bun run lint
-
-# Format code
-bun run format
+```typescript
+class ConditionBuilder {
+  when(trigger: QuickSilverEvent | ((ctx: any) => boolean), predicate?: (ctx: any) => boolean): this
+  then(...actions: Action[]): this
+  otherwise(...actions: Action[]): this
+  toJSON(): object
+  getConditions(): Condition[]
+}
 ```
 
-## Contributing
+### Product Builder
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+```typescript
+class ProductBuilder {
+  charge(rate: number, unit: string, currency?: Currency): this
+  stream(rate: number, unit: 'per_second' | 'per_minute', currency?: Currency): this
+  guarantee(guarantees: Record<string, any>): this
+  stage(name: string, config: { delegateTo: string, charge: number }): this
+  build(): Product
+}
+```
 
-## License
+### Action Builder
 
-MIT License - see LICENSE file for details.
+```typescript
+class Action {
+  static release(amount: number, currency?: Currency): ActionBuilder
+  static notify(account: any, message: string): Action
+  static hold(message: string): Action
+  static custom(type: string, data: Record<string, any>): Action
+}
 
-## Support
+class ActionBuilder {
+  to(account: any): ActionBuilder
+  withMeta(meta: Record<string, any>): ActionBuilder
+  build(): Action
+}
+```
 
-- Documentation: [docs.quicksilver.com](https://docs.quicksilver.com)
-- Issues: [GitHub Issues](https://github.com/quicksilver/quicksilver-sdk/issues)
-- Discord: [Join our community](https://discord.gg/quicksilver) 
+## 🎯 Use Cases
+
+### Content Creator Monetization
+Real-time payment streams based on engagement, views, or time spent.
+
+### Freelance Platform Payments
+Milestone-based payments with escrow and conditional release.
+
+### Subscription Services
+Automated recurring payments with usage-based billing.
+
+### Gaming Platforms
+Real-time microtransactions and reward systems.
+
+### DeFi Infrastructure
+Conditional payments and oracle integration.
+
+### Enterprise Payments
+Large-scale processing with compliance and audit trails.
+
+## 🚀 Getting Started
+
+1. **Install the SDK**: `npm install quicksilver-sdk`
+2. **Get an API Key**: Sign up at [quicksilver.com](https://quicksilver.com)
+3. **Run Examples**: Check out the `examples/` directory
+4. **Build Something**: Start with simple transactions, then add conditional logic
+
+## 📚 Examples
+
+- `examples/1-accounts-and-delegation.ts` - Account creation and delegation
+- `examples/2-fluent-transactions.ts` - Basic transaction types
+- `examples/3-conditional-escrow.ts` - Conditional logic and escrow
+- `examples/4-programmable-products.ts` - Product definitions and purchases
+- `examples/5-streaming-and-events.ts` - Streaming payments and events
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+**Quicksilver SDK** - Where elegant design meets programmable money. 💎 

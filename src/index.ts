@@ -2,7 +2,19 @@
 export { QuicksilverClient } from './client';
 export type { ClientOptions } from './client';
 
-// Resource classes
+// Active models
+export { Account } from './models/account';
+export { Transaction } from './models/transaction';
+
+// Builders (the heart of the fluent DSL)
+export { ConditionBuilder } from './builders/condition';
+export { ProductBuilder, Product } from './builders/product';
+export { Action, ActionBuilder } from './builders/action';
+
+// Core types and enums
+export { QuickSilverEvent } from './types';
+
+// Resource classes (for advanced usage)
 export { AccountsResource } from './resources/accounts';
 export { TransactionsResource } from './resources/transactions';
 export { StreamsResource } from './resources/streams';
@@ -25,8 +37,8 @@ export {
 // Type definitions
 export type {
   // Core types
-  Account,
-  Transaction,
+  Account as AccountData,
+  Transaction as TransactionData,
   StreamingTransaction,
   AccountType,
   TransactionType,

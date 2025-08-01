@@ -1,10 +1,11 @@
 import { HttpClient } from '../http';
 import type { 
-  Account, 
+  Account as AccountData, 
   CreateAccountPayload, 
   PaginationParams, 
   PaginatedResponse 
 } from '../types';
+import { Account } from '../models/account';
 
 export class AccountsResource {
   constructor(private httpClient: HttpClient) {}
@@ -14,7 +15,8 @@ export class AccountsResource {
    * @param payload - The details of the account to create.
    */
   async create(payload: CreateAccountPayload): Promise<Account> {
-    return this.httpClient.post<Account>('/accounts', payload);
+    const accountData = await this.httpClient.post<AccountData>('/accounts', payload);
+    return new Account(accountData, this.httpClient);
   }
 
   /**
@@ -22,7 +24,8 @@ export class AccountsResource {
    * @param id - The ID of the account to retrieve.
    */
   async retrieve(id: string): Promise<Account> {
-    return this.httpClient.get<Account>(`/accounts/${id}`);
+    const accountData = await this.httpClient.get<AccountData>(`/accounts/${id}`);
+    return new Account(accountData, this.httpClient);
   }
 
   /**
@@ -45,7 +48,11 @@ export class AccountsResource {
     const queryString = queryParams.toString();
     const url = queryString ? `/accounts?${queryString}` : '/accounts';
     
-    return this.httpClient.get<PaginatedResponse<Account>>(url);
+    const response = await this.httpClient.get<PaginatedResponse<AccountData>>(url);
+    return {
+      ...response,
+      data: response.data.map(accountData => new Account(accountData, this.httpClient))
+    };
   }
 
   /**
@@ -54,7 +61,8 @@ export class AccountsResource {
    * @param payload - The updated account details.
    */
   async update(id: string, payload: Partial<CreateAccountPayload>): Promise<Account> {
-    return this.httpClient.put<Account>(`/accounts/${id}`, payload);
+    const accountData = await this.httpClient.put<AccountData>(`/accounts/${id}`, payload);
+    return new Account(accountData, this.httpClient);
   }
 
   /**
@@ -88,6 +96,10 @@ export class AccountsResource {
       ? `/accounts/${parentId}/children?${queryString}` 
       : `/accounts/${parentId}/children`;
     
-    return this.httpClient.get<PaginatedResponse<Account>>(url);
+    const response = await this.httpClient.get<PaginatedResponse<AccountData>>(url);
+    return {
+      ...response,
+      data: response.data.map(accountData => new Account(accountData, this.httpClient))
+    };
   }
 } 
