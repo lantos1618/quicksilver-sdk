@@ -15,7 +15,20 @@ export class AccountsResource {
    * @param payload - The details of the account to create.
    */
   async create(payload: CreateAccountPayload): Promise<Account> {
-    const accountData = await this.httpClient.post<AccountData>('/accounts', payload);
+    // Set root accounts (no parent_id) as verified by default
+    const enhancedPayload = {
+      ...payload,
+      verification: payload.verification || {
+        status: !payload.parent_id ? 'verified' : 'unverified',
+        verified_at: !payload.parent_id ? new Date().toISOString() : undefined,
+        kyc_data: !payload.parent_id ? {
+          verified_by: 'system',
+          document_type: 'root_account'
+        } : undefined
+      }
+    };
+
+    const accountData = await this.httpClient.post<AccountData>('/accounts', enhancedPayload);
     return new Account(accountData, this.httpClient);
   }
 

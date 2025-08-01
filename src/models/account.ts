@@ -88,4 +88,89 @@ export class Account {
     const balance = await this.http.get<{ amount: number; currency: string }>(`/accounts/${this.id}/balance`);
     return balance;
   }
+
+  /**
+   * Check if the account is verified.
+   */
+  isVerified(): boolean {
+    return this.data.verification.status === 'verified';
+  }
+
+  /**
+   * Check if the account is a root account (no parent).
+   */
+  isRootAccount(): boolean {
+    return !this.data.parent_id;
+  }
+
+  /**
+   * Submit KYC verification documents.
+   */
+  async submitKYC(kycData: {
+    document_type: string;
+    document_number: string;
+    document_file?: File | Blob;
+  }): Promise<this> {
+    const formData = new FormData();
+    formData.append('document_type', kycData.document_type);
+    formData.append('document_number', kycData.document_number);
+    
+    if (kycData.document_file) {
+      formData.append('document_file', kycData.document_file);
+    }
+
+    this.data = await this.http.post<AccountData>(`/accounts/${this.id}/kyc`, formData);
+    return this;
+  }
+
+  /**
+   * Verify the account (admin function - requires special permissions).
+   */
+  async verify(verifiedBy: string): Promise<this> {
+    this.data = await this.http.post<AccountData>(`/accounts/${this.id}/verify`, {
+      verified_by: verifiedBy,
+      verified_at: new Date().toISOString()
+    });
+    return this;
+  }
+
+  /**
+   * Reject verification (admin function - requires special permissions).
+   */
+  async rejectVerification(reason: string): Promise<this> {
+    this.data = await this.http.post<AccountData>(`/accounts/${this.id}/reject-verification`, {
+      reason,
+      rejected_at: new Date().toISOString()
+    });
+    return this;
+  }
+
+  /**
+   * Get verification status and details.
+   */
+  getVerificationStatus(): {
+    status: 'unverified' | 'pending' | 'verified' | 'rejected';
+    verified_at?: string | null;
+    kyc_data?: {
+      document_type?: string;
+      document_number?: string;
+      verified_by?: string;
+    } | null;
+  } {
+    return this.data.verification;
+  }
+
+  /**
+   * Check if the account can perform transactions (must be verified).
+   */
+  canTransact(): boolean {
+    return this.isVerified();
+  }
+
+  /**
+   * Check if the account can delegate to other accounts (must be verified).
+   */
+  canDelegate(): boolean {
+    return this.isVerified();
+  }
 } 

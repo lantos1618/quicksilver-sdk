@@ -60,6 +60,15 @@ export interface Account {
     per_transaction?: number | null;
     total?: number | null;
   };
+  verification: {
+    status: 'unverified' | 'pending' | 'verified' | 'rejected';
+    verified_at?: string | null;
+    kyc_data?: {
+      document_type?: string;
+      document_number?: string;
+      verified_by?: string;
+    } | null;
+  };
   created_at: string; // ISO 8601 DateTime string
   updated_at: string; // ISO 8601 DateTime string
   children: string[];
@@ -104,6 +113,15 @@ export interface CreateAccountPayload {
     daily?: number;
     per_transaction?: number;
     total?: number;
+  };
+  verification?: {
+    status?: 'unverified' | 'pending' | 'verified' | 'rejected';
+    verified_at?: string;
+    kyc_data?: {
+      document_type?: string;
+      document_number?: string;
+      verified_by?: string;
+    };
   };
 }
 
