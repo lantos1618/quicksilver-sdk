@@ -1,6 +1,7 @@
 import { HttpClient } from '../http';
 import { Transaction as TransactionData } from '../types';
 import { ConditionBuilder } from '../builders/condition';
+import { StreamConnection } from '../realtime/sse';
 
 export class Transaction {
   public readonly id: string;
@@ -117,5 +118,94 @@ export class Transaction {
   async updateMeta(meta: Record<string, any>): Promise<this> {
     this.data = await this.http.patch<TransactionData>(`/transactions/${this.id}`, { meta });
     return this;
+  }
+
+  /**
+   * Subscribe to real-time events for this transaction.
+   */
+  subscribe(): StreamConnection {
+    const baseURL = this.http.getBaseURL?.() || 'https://api.quicksilver.com';
+    const url = new URL(`${baseURL}/sse/transactions/${this.id}`);
+    return new StreamConnection(url);
+  }
+
+  /**
+   * Get the transaction status.
+   */
+  getStatus(): string {
+    return this.data.state;
+  }
+
+  /**
+   * Get transaction metadata (alias for getMeta).
+   */
+  getMetadata(): Record<string, any> {
+    return this.getMeta();
+  }
+
+  /**
+   * Add metadata to the transaction (fluent interface).
+   */
+  withMetadata(metadata: Record<string, any>): this {
+    this.data.meta = { ...this.data.meta, ...metadata };
+    return this;
+  }
+
+  /**
+   * Add conditional logic to the transaction (fluent interface).
+   */
+  withCondition(condition: ConditionBuilder): this {
+    return this.withConditions(condition);
+  }
+
+  /**
+   * Convert this transaction to a streaming transaction.
+   */
+  async toStream(options: { rate: number; rate_unit: string }): Promise<any> {
+    const streamData = await this.http.post<any>(`/transactions/${this.id}/stream`, options);
+    return streamData;
+  }
+
+  /**
+   * Start streaming this transaction.
+   */
+  async startStreaming(rate: number, unit: string): Promise<any> {
+    return this.toStream({ rate, rate_unit: unit });
+  }
+
+  /**
+   * Update the transaction.
+   */
+  async update(updates: Partial<TransactionData>): Promise<this> {
+    this.data = await this.http.put<TransactionData>(`/transactions/${this.id}`, updates);
+    return this;
+  }
+
+  /**
+   * Check if transaction is completed.
+   */
+  isCompleted(): boolean {
+    return this.data.state === 'Completed';
+  }
+
+  /**
+   * Check if transaction is failed.
+   */
+  isFailed(): boolean {
+    return this.data.state === 'Failed';
+  }
+
+  /**
+   * Get transaction conditions.
+   */
+  getConditions(): any {
+    return this.data.conditions;
+  }
+
+  /**
+   * String representation.
+   */
+  toString(): string {
+    return `Transaction(${this.id}, ${this.data.amount} ${this.data.currency}, ${this.data.state})`;
   }
 } 

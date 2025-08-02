@@ -4,6 +4,8 @@ import { TransactionsResource } from './resources/transactions';
 import { StreamsResource } from './resources/streams';
 import { ConditionBuilder } from './builders/condition';
 import { ProductBuilder } from './builders/product';
+import { Account } from './models/account';
+import { Transaction } from './models/transaction';
 
 export interface ClientOptions {
   /** The API environment to use. Defaults to 'production'. */
@@ -63,6 +65,20 @@ export class QuicksilverClient {
    */
   product(id: string): ProductBuilder {
     return new ProductBuilder(id);
+  }
+
+  /**
+   * Creates an Account object from account data
+   */
+  createAccount(data: any): Account {
+    return new Account(data, this.httpClient);
+  }
+
+  /**
+   * Creates a Transaction object from transaction data
+   */
+  createTransaction(data: any): Transaction {
+    return new Transaction(data, this.httpClient);
   }
 
   /**

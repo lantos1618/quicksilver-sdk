@@ -11,6 +11,27 @@ export class Product {
   }
 
   /**
+   * Gets the product's pricing information
+   */
+  getPricing(): any {
+    return this.structure.pricing;
+  }
+
+  /**
+   * Gets the product's guarantees
+   */
+  getGuarantees(): any {
+    return this.structure.guarantees;
+  }
+
+  /**
+   * Gets the product's workflow stages
+   */
+  getWorkflow(): any[] {
+    return this.structure.workflow || [];
+  }
+
+  /**
    * Serializes the product to JSON for API transmission.
    */
   toJSON(): object {

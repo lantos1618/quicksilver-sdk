@@ -40,6 +40,13 @@ export class HttpClient {
   }
 
   /**
+   * Get the base URL being used for API requests
+   */
+  getBaseURL(): string {
+    return this.baseURL;
+  }
+
+  /**
    * Make a GET request
    */
   async get<T>(path: string, headers?: Record<string, string>): Promise<T> {
