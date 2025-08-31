@@ -1,0 +1,60 @@
+{
+  "name": "quicksilver-sdk",
+  "version": "1.0.0",
+  "description": "Modern TypeScript SDK for the Quicksilver Engine API",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target node --format esm --minify && tsc --project tsconfig.build.json",
+    "dev": "bun --watch src/index.ts",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "bun run clean && bun run build",
+    "test": "bun test --coverage",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage --reporter=verbose",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "quicksilver",
+    "api",
+    "sdk",
+    "typescript",
+    "payments",
+    "streaming",
+    "real-time"
+  ],
+  "author": "Quicksilver Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "events": "^3.3.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quicksilver/quicksilver-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/quicksilver/quicksilver-sdk/issues"
+  },
+  "homepage": "https://github.com/quicksilver/quicksilver-sdk#readme"
+} 
