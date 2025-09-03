@@ -35,12 +35,13 @@
   "author": "Quicksilver Team",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.12",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
     "prettier": "^3.0.0",
-    "typescript": "^5.0.0"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "events": "^3.3.0"
@@ -57,4 +58,4 @@
     "url": "https://github.com/quicksilver/quicksilver-sdk/issues"
   },
   "homepage": "https://github.com/quicksilver/quicksilver-sdk#readme"
-} 
+}

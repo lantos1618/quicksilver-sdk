@@ -8,7 +8,8 @@ export { Transaction } from './models/transaction';
 
 // Builders (the heart of the fluent DSL)
 export { ConditionBuilder } from './builders/condition';
-export { ProductBuilder, Product } from './builders/product';
+export { ProductBuilder } from './builders/product';
+export type { Product } from './builders/product';
 export { Action, ActionBuilder } from './builders/action';
 
 // Core types and enums
