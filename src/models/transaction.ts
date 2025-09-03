@@ -36,7 +36,15 @@ export class Transaction {
   }
 
   get state(): string {
-    return this.data.state;
+    return this.data.state || this.data.status;
+  }
+
+  get status(): string {
+    return this.data.status || this.data.state;
+  }
+
+  get parentId(): string | null {
+    return this.data.parent_id || null;
   }
 
   get meta(): Record<string, any> {
@@ -62,12 +70,17 @@ export class Transaction {
   /**
    * Execute the transaction.
    */
-  async execute(): Promise<this> {
-    if (this.data.state !== 'Draft') {
-      throw new Error(`Cannot execute transaction in state: ${this.data.state}`);
+  async execute(gatewayId?: string): Promise<this> {
+    const currentState = this.data.state || this.data.status;
+    if (currentState && currentState !== 'Draft' && currentState !== 'pending') {
+      throw new Error(`Cannot execute transaction in state: ${currentState}`);
     }
 
-    this.data = await this.http.post<TransactionData>(`/transactions/${this.id}/execute`);
+    if (gatewayId) {
+      this.data = await this.http.post<TransactionData>(`/transactions/${this.id}/gateway/execute`, { gatewayId });
+    } else {
+      this.data = await this.http.post<TransactionData>(`/transactions/${this.id}/execute`);
+    }
     return this;
   }
 
@@ -75,8 +88,10 @@ export class Transaction {
    * Cancel the transaction.
    */
   async cancel(): Promise<this> {
-    if (this.data.state === 'Completed' || this.data.state === 'Failed') {
-      throw new Error(`Cannot cancel transaction in state: ${this.data.state}`);
+    const currentState = this.data.state || this.data.status;
+    if (currentState === 'Completed' || currentState === 'completed' || 
+        currentState === 'Failed' || currentState === 'failed') {
+      throw new Error(`Cannot cancel transaction in state: ${currentState}`);
     }
 
     this.data = await this.http.post<TransactionData>(`/transactions/${this.id}/cancel`);
@@ -124,14 +139,16 @@ export class Transaction {
    * Check if the transaction is in a final state.
    */
   isFinal(): boolean {
-    return ['Completed', 'Failed', 'Cancelled'].includes(this.data.state);
+    const currentState = this.data.state || this.data.status || '';
+    return ['Completed', 'Failed', 'Cancelled', 'completed', 'failed', 'cancelled'].includes(currentState);
   }
 
   /**
    * Check if the transaction is pending execution.
    */
   isPending(): boolean {
-    return ['Draft', 'Pending'].includes(this.data.state);
+    const currentState = this.data.state || this.data.status || '';
+    return ['Draft', 'Pending', 'draft', 'pending'].includes(currentState);
   }
 
   /**
@@ -178,7 +195,7 @@ export class Transaction {
    * Get the transaction status.
    */
   getStatus(): string {
-    return this.data.state;
+    return this.data.state || this.data.status;
   }
 
   /**
@@ -227,17 +244,72 @@ export class Transaction {
   }
 
   /**
+   * Delete the transaction.
+   */
+  async delete(): Promise<void> {
+    await this.http.delete(`/transactions/${this.id}`);
+  }
+
+  /**
+   * Execute the transaction through a gateway.
+   */
+  async executeGateway(gatewayId: string): Promise<this> {
+    this.data = await this.http.post<TransactionData>(`/transactions/${this.id}/gateways/${gatewayId}/execute`);
+    return this;
+  }
+
+  /**
+   * Create a streaming transaction.
+   */
+  async stream(options: { rate?: number; rateUnit?: string; rate_unit?: string; endTime?: string }): Promise<any> {
+    const streamOptions = {
+      rate: options.rate,
+      rateUnit: options.rateUnit || options.rate_unit,
+      endTime: options.endTime
+    };
+    const streamData = await this.http.post<any>(`/transactions/${this.id}/stream`, streamOptions);
+    return streamData;
+  }
+
+  /**
+   * Refund the transaction.
+   */
+  async refund(amount?: number): Promise<this> {
+    const refundAmount = amount !== undefined ? amount : this.data.amount;
+    const refundData = { amount: refundAmount };
+    this.data = await this.http.post<TransactionData>(`/transactions/${this.id}/refund`, refundData);
+    return this;
+  }
+
+  /**
+   * Get streams associated with this transaction.
+   */
+  async getStreams(): Promise<any[]> {
+    const streams = await this.http.get<any[]>(`/transactions/${this.id}/streams`);
+    return streams || [];
+  }
+
+  /**
+   * Convert to JSON.
+   */
+  toJSON(): TransactionData {
+    return this.data;
+  }
+
+  /**
    * Check if transaction is completed.
    */
   isCompleted(): boolean {
-    return this.data.state === 'Completed';
+    const currentState = this.data.state || this.data.status || '';
+    return currentState === 'Completed' || currentState === 'completed';
   }
 
   /**
    * Check if transaction is failed.
    */
   isFailed(): boolean {
-    return this.data.state === 'Failed';
+    const currentState = this.data.state || this.data.status || '';
+    return currentState === 'Failed' || currentState === 'failed';
   }
 
   /**

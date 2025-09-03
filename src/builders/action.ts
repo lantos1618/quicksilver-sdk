@@ -55,10 +55,20 @@ export class Action implements ActionInterface {
 export class ActionBuilder implements ActionInterface {
   type: string;
   private data: Record<string, any>;
+  params?: Record<string, any>;
 
   constructor(type: string, data: Record<string, any> = {}) {
     this.type = type;
     this.data = data;
+  }
+
+  /**
+   * Adds parameters to the action.
+   */
+  with(params: Record<string, any>): ActionBuilder {
+    this.params = { ...this.params, ...params };
+    this.data = { ...this.data, ...params };
+    return this;
   }
 
   /**
@@ -82,6 +92,12 @@ export class ActionBuilder implements ActionInterface {
    * Serializes the action to JSON for API transmission.
    */
   toJSON(): object {
+    if (this.params) {
+      return {
+        type: this.type,
+        params: this.params
+      };
+    }
     return {
       type: this.type,
       ...this.data

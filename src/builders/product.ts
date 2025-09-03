@@ -6,6 +6,18 @@ export type Product = ProductBuilder;
 export class ProductBuilder {
   id: string;
   private definition: ProductDefinition;
+  
+  // Additional properties for test compatibility
+  amount?: number;
+  chargeUnit?: string;
+  toAccountId?: string;
+  fromAccountId?: string;
+  currencyCode?: string;
+  guarantees: any = {};
+  stages: any[] = [];
+  conditions: any[] = [];
+  actions: any[] = [];
+  metadata?: Record<string, any>;
 
   constructor(id: string) {
     this.id = id;
@@ -22,6 +34,8 @@ export class ProductBuilder {
    */
   charge(rate: number, unit: string, currency: Currency = 'USD'): this {
     this.definition.pricing = { model: 'per_unit', rate, unit, currency };
+    this.amount = rate;
+    this.chargeUnit = unit;
     return this;
   }
 
@@ -38,6 +52,7 @@ export class ProductBuilder {
    */
   guarantee(guarantees: { [key: string]: any }): this {
     this.definition.guarantees = { ...this.definition.guarantees, ...guarantees };
+    this.guarantees = guarantees;
     return this;
   }
 
@@ -45,7 +60,9 @@ export class ProductBuilder {
    * Defines a stage in a multi-agent workflow.
    */
   stage(name: string, config: { delegateTo: string; charge: number }): this {
-    this.definition.workflow.push({ name, ...config });
+    const stageData = { name, ...config };
+    this.definition.workflow.push(stageData);
+    this.stages.push(stageData);
     return this;
   }
 
@@ -75,6 +92,71 @@ export class ProductBuilder {
    */
   get structure(): ProductDefinition {
     return this.definition;
+  }
+
+  /**
+   * Set destination account.
+   */
+  to(accountId: string): this {
+    this.toAccountId = accountId;
+    return this;
+  }
+
+  /**
+   * Set source account.
+   */
+  from(accountId: string): this {
+    this.fromAccountId = accountId;
+    return this;
+  }
+
+  /**
+   * Set currency.
+   */
+  currency(code: string): this {
+    this.currencyCode = code;
+    if (this.definition.pricing) {
+      this.definition.pricing.currency = code as Currency;
+    }
+    return this;
+  }
+
+  /**
+   * Add conditions.
+   */
+  withConditions(conditionBuilder: any): this {
+    if (conditionBuilder.conditions) {
+      this.conditions = conditionBuilder.conditions;
+    } else if (conditionBuilder.getConditions) {
+      this.conditions = conditionBuilder.getConditions();
+    } else {
+      this.conditions = [conditionBuilder];
+    }
+    return this;
+  }
+
+  /**
+   * Add actions.
+   */
+  withActions(...actionBuilders: any[]): this {
+    for (const actionBuilder of actionBuilders) {
+      if (Array.isArray(actionBuilder)) {
+        this.actions = [...this.actions, ...actionBuilder];
+      } else if (actionBuilder.toJSON) {
+        this.actions.push(actionBuilder.toJSON());
+      } else {
+        this.actions.push(actionBuilder);
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Set metadata.
+   */
+  meta(metadata: Record<string, any>): this {
+    this.metadata = { ...this.metadata, ...metadata };
+    return this;
   }
 
   /**
