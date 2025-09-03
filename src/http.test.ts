@@ -53,8 +53,8 @@ describe("HttpClient", () => {
         expect.objectContaining({
           method: "GET",
           headers: expect.objectContaining({
-            "X-API-Key": "test-api-key",
-            "Accept": "application/json",
+            "Authorization": "Bearer test-api-key",
+            "Content-Type": "application/json",
           }),
         })
       );
@@ -113,7 +113,7 @@ describe("HttpClient", () => {
         expect.objectContaining({
           method: "POST",
           headers: expect.objectContaining({
-            "X-API-Key": "test-api-key",
+            "Authorization": "Bearer test-api-key",
             "Content-Type": "application/json",
           }),
           body: JSON.stringify(requestData),
@@ -156,7 +156,7 @@ describe("HttpClient", () => {
         expect.objectContaining({
           method: "PUT",
           headers: expect.objectContaining({
-            "X-API-Key": "test-api-key",
+            "Authorization": "Bearer test-api-key",
             "Content-Type": "application/json",
           }),
           body: JSON.stringify(updateData),
@@ -183,7 +183,7 @@ describe("HttpClient", () => {
         expect.objectContaining({
           method: "DELETE",
           headers: expect.objectContaining({
-            "X-API-Key": "test-api-key",
+            "Authorization": "Bearer test-api-key",
           }),
         })
       );
@@ -211,7 +211,7 @@ describe("HttpClient", () => {
         expect.objectContaining({
           method: "PATCH",
           headers: expect.objectContaining({
-            "X-API-Key": "test-api-key",
+            "Authorization": "Bearer test-api-key",
             "Content-Type": "application/json",
           }),
           body: JSON.stringify(patchData),

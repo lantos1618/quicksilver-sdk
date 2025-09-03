@@ -79,6 +79,15 @@ export class TransactionsResource {
   }
 
   /**
+   * Execute a transaction through a gateway.
+   * @param transactionId - The ID of the transaction to execute.
+   * @param gatewayId - The ID of the gateway to use.
+   */
+  async execute(transactionId: string, gatewayId: string): Promise<TransactionData> {
+    return this.httpClient.post<TransactionData>(`/transactions/${transactionId}/execute`, { gateway_id: gatewayId });
+  }
+
+  /**
    * Converts a base transaction into a streaming transaction.
    * @param baseTransactionId - The ID of the transaction to convert into a stream.
    * @param payload - The configuration for the stream.
